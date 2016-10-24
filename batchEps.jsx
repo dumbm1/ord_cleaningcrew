@@ -3,6 +3,7 @@
  *
  * https://forums.adobe.com/thread/2225302
  *
+ * STAFF:
  * There are around 6'000 EPS-Files.
  * They have all the same size and "corner marks" at the corners.
  * Now I am looking for a Batch Script (for Mac, AI CS5 or CC),
@@ -14,19 +15,18 @@
  * and should save them in an given folder (out).
  *
  * we will get later more of the files and need them to convert them with a Batch-Script again.
- */
-
-/**
- * algorithm of delCrops()
- * select all then get bounds then deselect
- * loop over open paths that haves < 5 path points
- * * loop over path points
- * * * delete all paths that points out of (bounds - 2pt)
+ * ***
  *
+ * 1. I could not stop the script with the cancel button while saving an eps file.
+ * 2. I could not stop the script with the general cancel button in the script.
+ * 3. The script did not stopped after the last processed file. I had to shot down Illustrator by finder.
+ * 4. One file was not processed https://www.ghc-gmbh.ch/download/iso7001-0019.eps maybe you can find out what happend here?
  *
- * todo: slice odd "eps" on file name
- * todo: fit artboard
- * todo: color profiles worning alert
+ * todo: the script did not stopped after the last processed file (????) it's weery interesting
+ *
+ * todo: add correct error handling
+ * todo: add check for creator of eps
+ *
  * */
 
 //@target illustrator-19
@@ -36,19 +36,18 @@
       outPath      = '',
       inputFolder  = new Folder (inputPath),
       outputFolder = new Folder (outPath);
+  var w            = new Window ('dialog', 'Batch EPS'),
+      folderPan    = w.add ('panel', undefined, 'Folders'),
+      inGr         = folderPan.add ('group'),
+      outGr        = folderPan.add ('group'),
+      inFld        = inGr.add ('edittext', [0, 0, 300, 25]),
+      inBtn        = inGr.add ('button', [0, 0, 100, 25], 'Input from'),
+      outFld       = outGr.add ('edittext', [0, 0, 300, 25]),
+      outBtn       = outGr.add ('button', [0, 0, 100, 25], 'Output to'),
 
-  var w         = new Window ('dialog', 'Batch EPS'),
-      folderPan = w.add ('panel', undefined, 'Folders'),
-      inGr      = folderPan.add ('group'),
-      outGr     = folderPan.add ('group'),
-      inFld     = inGr.add ('edittext', [0, 0, 300, 25]),
-      inBtn     = inGr.add ('button', [0, 0, 100, 25], 'Input from'),
-      outFld    = outGr.add ('edittext', [0, 0, 300, 25]),
-      outBtn    = outGr.add ('button', [0, 0, 100, 25], 'Output to'),
-
-      btnGr     = w.add ('group'),
-      btnBatch  = btnGr.add ('button', undefined, 'Batch'),
-      btnCansel = btnGr.add ('button', undefined, 'Cancel');
+      btnGr        = w.add ('group'),
+      btnBatch     = btnGr.add ('button', undefined, 'Batch'),
+      btnCansel    = btnGr.add ('button', undefined, 'Cancel');
 
   w.alignChildren = 'right';
 
@@ -153,10 +152,11 @@
       var d = activeDocument,
           i;
       for (i = d.layers.length - 1; i >= 0; i--) {
-        var lay = d.layers[i];
-        if (lay.visible) continue;
+        var lay     = d.layers[i];
         lay.visible = true;
         lay.locked  = false;
+        executeMenuCommand ('showAll');
+        executeMenuCommand ('unlockAll');
       }
     }
   }
