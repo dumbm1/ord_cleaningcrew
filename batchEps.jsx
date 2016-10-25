@@ -1,14 +1,19 @@
 /**
  * ai.jsx (c)MaratShagiev m_js@bk.ru 25.10.2016
+ *
+ * I could not to reproduce the bug - all files in archive are processed without errors.
+ * The artboard may stick to the edges of the image only one case - if there are no crop marks.
+ * And in the submitted testing files
+ * (so the archive is contains already processed files, but I mean the source files in it)
+ * the crop marks are everywhere.
  * */
 //@target illustrator
 (function batchEps() {
   var inputPath    = '',
       outPath      = '',
       inputFolder  = new Folder(inputPath),
-      outputFolder = new Folder(outPath),
-      convCount    = 0,
-      start        = new Date();
+      outputFolder = new Folder(outPath);
+
   var w            = new Window('dialog', 'Batch EPS'),
       folderPan    = w.add('panel', undefined, 'Folders'),
       inGr         = folderPan.add('group'),
@@ -20,6 +25,7 @@
       btnGr        = w.add('group'),
       btnBatch     = btnGr.add('button', undefined, 'Batch'),
       btnCansel    = btnGr.add('button', undefined, 'Cancel');
+
   w.alignChildren  = 'right';
   inBtn.onClick    = function() {
     inputFolder = Folder.selectDialog();
@@ -30,7 +36,6 @@
     outFld.text  = outputFolder;
   }
   btnBatch.onClick = function() {
-    $.hiresTimer / 1000000;
     var userInteractLevelStore = app.userInteractionLevel;
     app.userInteractionLevel   = UserInteractionLevel.DONTDISPLAYALERTS;
     if (!inputFolder.exists) {
@@ -54,39 +59,38 @@
     epsSaveOpts.postScript                 = EPSPostScriptLevelEnum.LEVEL2;
     epsSaveOpts.preview                    = EPSPreview.None;
     epsSaveOpts.saveMultipleArtboards      = false;
+
     for (var i = 0; i < inputFiles.length; i++) {
-      try {
+      try { // if DCS eps
         var epsFile = inputFiles[i];
         app.open(epsFile);
+        showAndUnlock();
+        executeMenuCommand('selectall');
+        executeMenuCommand('Fit Artboard to selected Art');
         var epsSaveFile = new File(outputFolder + '/' + activeDocument.name.slice(0, -4) + '-op.eps');
         delCrops();
         activeDocument.saveAs(epsSaveFile, epsSaveOpts);
         activeDocument.close(SaveOptions.DONOTSAVECHANGES);
-        convCount++;
       } catch (e) {
         continue;
       }
     }
+
     w.close();
     app.userInteractionLevel = userInteractLevelStore;
-    /* $.writeln(new Date());
-     $.writeln('execution time: ' + $.hiresTimer / 1000000);
-     $.writeln('converted files: ' + convCount);*/
   }
   w.show();
+
   /**
    * LIBRARY
    * */
   function delCrops() {
-    _showUnlockLays();
-    executeMenuCommand('selectall');
-    executeMenuCommand('Fit Artboard to selected Art');
     var bnds   = activeDocument.artboards[0].artboardRect,
         doc    = activeDocument,
         indent = 4,
-        rmCnt  = 0,
         left, top, right, bott,
         i, j;
+
     left       = bnds[0] + indent;
     top        = bnds[1] - indent;
     right      = bnds[2] - indent;
@@ -107,19 +111,17 @@
         }
       }
       pth.remove();
-      rmCnt++;
     }
-    return rmCnt;
-    function _showUnlockLays() {
-      var d = activeDocument,
-          i;
-      for (i = d.layers.length - 1; i >= 0; i--) {
-        var lay     = d.layers[i];
-        lay.visible = true;
-        lay.locked  = false;
-        executeMenuCommand('showAll');
-        executeMenuCommand('unlockAll');
-      }
+  }
+  function showAndUnlock() {
+    var d = activeDocument,
+        i;
+    for (i = 0; i < d.layers.length; i++) {
+      var lay     = d.layers[i];
+      lay.visible = true;
+      lay.locked  = false;
+      executeMenuCommand('showAll');
+      executeMenuCommand('unlockAll');
     }
   }
 }());
